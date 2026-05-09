@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <title>명진빌딩 자산관리 대시보드</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+    :root {
+      --bg:#f4f5f7; --surface:#fff; --surface2:#f8f9fc;
+      --border:#e4e7ef; --border2:#d0d5e8;
+      --accent:#2563eb; --accent-light:#eff4ff;
+      --green:#059669; --green-light:#ecfdf5;
+      --red:#dc2626; --red-light:#fef2f2;
+      --amber:#d97706; --amber-light:#fffbeb;
+      --text:#111827; --text-muted:#6b7280; --text-dim:#9ca3af;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;}
+
+    /* 헤더 */
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+    .logo-text{font-size:17px;font-weight:700;letter-spacing:-.3px;}
+    .logo-sub{font-size:11px;color:var(--text-muted);}
+    .header-right{display:flex;align-items:center;gap:10px;}
+    .period-badge{font-size:12px;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);padding:4px 12px;border-radius:6px;font-weight:500;}
+    .month-nav{display:flex;gap:4px;}
+    .month-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Noto Sans KR',sans-serif;font-weight:500;transition:all .15s;}
+    .month-btn:hover{border-color:var(--accent);color:var(--accent);}
+    .month-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+    /* 레이아웃 */
+    main{padding:24px 32px;max-width:1400px;margin:0 auto;}
+
+    /* KPI */
+    .kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px;}
+    .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px 28px;}
+    .kpi-label{font-size:13px;color:var(--text-muted);font-weight:500;margin-bottom:10px;}
+    .kpi-row{display:flex;align-items:baseline;gap:5px;}
+    .kpi-value{font-family:'DM Mono',monospace;font-size:34px;font-weight:500;letter-spacing:-.5px;}
+    .kpi-unit{font-size:14px;color:var(--text-muted);}
+    .kpi-sub{font-size:12px;color:var(--text-muted);margin-top:6px;}
+    .kpi-change{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;margin-top:6px;}
+    .kpi-change.down{background:var(--green-light);color:var(--green);}
+    .kpi-change.up{background:var(--red-light);color:var(--red);}
+
+    /* 섹션 타이틀 */
+    .section-title{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;margin-top:4px;display:flex;align-items:center;gap:10px;}
+    .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+    /* 메인 그리드 */
+    .main-grid{display:grid;grid-template-columns:1fr 330px;gap:16px;margin-bottom:20px;}
+
+    /* 카드 공통 */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+    .card-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+    .card-title{font-size:14px;font-weight:700;}
+    .card-sub{font-size:11px;color:var(--text-muted);}
+
+    /* 테이블 */
+    table{width:100%;border-collapse:collapse;}
+    thead th{padding:9px 16px;text-align:left;font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap;}
+    thead th.num{text-align:right;}
+    tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
+    tbody tr:last-child{border-bottom:none;}
+    tbody tr:hover{background:var(--surface2);}
+    tbody tr.vacant{opacity:.5;}
+    td{padding:11px 16px;font-size:13px;white-space:nowrap;}
+    td.num{text-align:right;font-family:'DM Mono',monospace;font-size:12px;}
+    tfoot td{padding:11px 16px;font-size:13px;font-weight:700;background:var(--surface2);border-top:2px solid var(--border2);}
+    tfoot td.num{text-align:right;font-family:'DM Mono',monospace;font-size:12px;}
+
+    .floor-badge{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);font-weight:500;}
+    .tenant-name{font-weight:500;font-size:13px;color:var(--text);}
+
+    .status-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 9px;border-radius:99px;font-weight:600;white-space:nowrap;}
+    .status-badge .dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+    .status-badge.active{background:var(--accent-light);color:var(--accent);}
+    .status-badge.vacant{background:var(--surface2);color:var(--text-dim);border:1px solid var(--border);}
+    .status-badge.quarterly{background:var(--amber-light);color:var(--amber);}
+
+    /* 사이드 */
+    .side-panel{display:flex;flex-direction:column;gap:14px;}
+    .info-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+    .info-card-title{font-size:14px;font-weight:700;margin-bottom:14px;}
+    .water-amount{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--green);letter-spacing:-.5px;}
+    .water-amount .unit{font-size:13px;color:var(--text-muted);margin-left:2px;font-family:'Noto Sans KR',sans-serif;}
+    .water-period{font-size:11px;color:var(--text-muted);margin-top:4px;margin-bottom:14px;}
+
+    .btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;font-family:'Noto Sans KR',sans-serif;border:none;transition:all .15s;width:100%;}
+    .btn-primary{background:var(--accent);color:#fff;}
+    .btn-primary:hover{background:#1d4ed8;}
+    .btn-outline{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);}
+    .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+    .vacant-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+    .vacant-item:last-of-type{border-bottom:none;}
+
+    /* 차트 */
+    .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+    .chart-body{padding:18px 20px;}
+    .chart-container{position:relative;height:210px;}
+
+    /* 증감 */
+    .change-up{color:var(--red);font-weight:600;}
+    .change-down{color:var(--green);font-weight:600;}
+    .change-zero{color:var(--text-dim);}
+
+    /* 고지서 */
+    .notice-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:32px;}
+    .notice-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;transition:box-shadow .15s,border-color .15s;}
+    .notice-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.07);border-color:var(--accent);}
+    .notice-floor{font-size:11px;color:var(--text-muted);margin-bottom:3px;font-weight:500;}
+    .notice-tenant{font-size:14px;font-weight:700;margin-bottom:10px;}
+    .notice-total{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--accent);margin-bottom:10px;}
+    .notice-breakdown{font-size:11px;color:var(--text-muted);display:flex;flex-direction:column;gap:3px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border);}
+    .notice-row{display:flex;justify-content:space-between;}
+    .notice-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);}
+
+    @media(max-width:1100px){.main-grid{grid-template-columns:1fr;}.kpi-grid{grid-template-columns:repeat(2,1fr);}.chart-grid{grid-template-columns:1fr;}}
+    @media(max-width:600px){main{padding:14px;}header{padding:0 14px;}.kpi-grid{grid-template-columns:1fr 1fr;}}
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="logo-text">명진빌딩 자산관리</div>
+    <div class="logo-sub">서울특별시 강남구 봉은사로 203</div>
+  </div>
+  <div class="header-right">
+    <div class="period-badge" id="currentPeriod">2026년 4월</div>
+    <div class="month-nav" id="monthNav"></div>
+  </div>
+</header>
+
+<main>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">당월 전기요금</div>
+      <div class="kpi-row"><div class="kpi-value" id="kpiElec">-</div><div class="kpi-unit">원</div></div>
+      <div class="kpi-change" id="kpiElecChange">-</div>
+      <div style="margin-top:12px" id="elecBillArea"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">당월 수도요금</div>
+      <div class="kpi-row"><div class="kpi-value" id="kpiWater">-</div><div class="kpi-unit">원</div></div>
+      <div class="kpi-sub" id="kpiWaterPeriod">-</div>
+      <div style="margin-top:12px" id="waterBillArea"></div>
+    </div>
+  </div>
+
+  <div class="section-title">임대현황</div>
+  <div class="main-grid">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">층별 임대현황</span>
+        <span class="card-sub">임대중 <strong id="occupiedCount" style="color:var(--accent)">-</strong> / 전체 7개 층</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>층</th><th>임차인</th><th>상태</th>
+            <th class="num">전용면적(평)</th><th class="num">임대료</th>
+            <th class="num">관리비</th><th class="num">전기료</th><th class="num">합계</th>
+          </tr>
+        </thead>
+        <tbody id="tenantTable"></tbody>
+        <tfoot id="tenantTableFoot"></tfoot>
+      </table>
+    </div>
+    <div class="side-panel">
+      <div class="info-card">
+        <div class="info-card-title">💧 수도요금</div>
+        <div class="water-amount" id="waterAmount">-<span class="unit">원</span></div>
+        <div class="water-period" id="waterPeriod">사용기간: -</div>
+        <!-- 청구서 다운로드: KPI 카드에서 제공 -->
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">🏢 공실 현황</div>
+        <div id="vacantInfo"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">전기요금 분석</div>
+  <div class="chart-grid">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">전체 전기요금 추이</span>
+        <span class="card-sub">최근 4개월</span>
+      </div>
+      <div class="chart-body"><div class="chart-container"><canvas id="totalElecChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">층별 전기사용량 비교</span>
+        <span class="card-sub" id="elecMonthLabel">-</span>
+      </div>
+      <div class="chart-body"><div class="chart-container"><canvas id="floorElecChart"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="section-title">층별 전기료 상세</div>
+  <div class="card" style="margin-bottom:24px">
+    <table>
+      <thead>
+        <tr>
+          <th>층</th><th>임차인</th>
+          <th class="num">전월검침</th><th class="num">당월검침</th>
+          <th class="num">사용량 (kWh)</th><th class="num">전월대비</th><th class="num">청구금액</th>
+        </tr>
+      </thead>
+      <tbody id="elecTable"></tbody>
+    </table>
+  </div>
+
+  <div class="section-title">고지서 발행</div>
+  <div class="notice-grid" id="noticeGrid"></div>
+</main>
+
+<script>
+const BUILDING = {
+  name:"명진빌딩",
+  address:"서울특별시 강남구 봉은사로 203 (논현동 234-27)",
+  account:"신한은행 140-004-809695 / 예금주 : 디에스알㈜ 홍석빈"
+};
+const TENANTS = [
+  {id:"b1",  floor:"B1층",  tenant:null,          status:"공실",  area:115.97, rent:0,        maint:0,       cycle:"monthly"},
+  {id:"f1",  floor:"1층",   tenant:"타마시헤어",  status:"임대중", area:60.51,  rent:9900000,  maint:2013000, cycle:"monthly"},
+  {id:"f2",  floor:"2층",   tenant:null,          status:"공실",  area:65.72,  rent:0,        maint:0,       cycle:"monthly"},
+  {id:"f3",  floor:"3층",   tenant:"독한짐",      status:"임대중", area:65.62,  rent:770000,   maint:1100000, cycle:"monthly"},
+  {id:"f4",  floor:"4층",   tenant:"㈜보이스인",  status:"임대중", area:63.97,  rent:5306780,  maint:2604588, cycle:"monthly"},
+  {id:"f56", floor:"5·6층", tenant:"DSR제강",     status:"임대중", area:109.07, rent:14060475, maint:1874730, cycle:"monthly"},
+  {id:"f7",  floor:"7층",   tenant:"DSRK",        status:"임대중", area:61.36,  rent:1485000,  maint:198000,  cycle:"quarterly"}
+];
+const ELEC_DATA = [
+  {year:2026,month:1,label:"1월",total_bill:5819079,total_kwh:31714,floors:[
+    {id:"b1",floor:"B1층",prev:6191.2,curr:6203.2,kwh:12.9,amount:0},
+    {id:"f1",floor:"1층",prev:37471.3,curr:39508.6,kwh:4013.7,amount:966782},
+    {id:"f2",floor:"2층",prev:43464,curr:43573,kwh:109,amount:0},
+    {id:"f3",floor:"3층",prev:80692.1,curr:80692.1,kwh:2246.5,amount:836782},
+    {id:"f4",floor:"4층",prev:128435.7,curr:129786.2,kwh:2955.9,amount:1008366},
+    {id:"f56",floor:"5·6층",prev:0,curr:0,kwh:3276.1,amount:1620198},
+    {id:"f7",floor:"7층",prev:102449.1,curr:104181.0,kwh:1731.9,amount:764784}
+  ]},
+  {year:2026,month:2,label:"2월",total_bill:5877980,total_kwh:30321,floors:[
+    {id:"b1",floor:"B1층",prev:6203.2,curr:6215.2,kwh:12,amount:0},
+    {id:"f1",floor:"1층",prev:39508.6,curr:41183.5,kwh:1674.9,amount:934416},
+    {id:"f2",floor:"2층",prev:43573,curr:43682,kwh:109,amount:0},
+    {id:"f3",floor:"3층",prev:80692.1,curr:82938.6,kwh:2246.5,amount:843135},
+    {id:"f4",floor:"4층",prev:129786.2,curr:130228.8,kwh:2440.3,amount:944789},
+    {id:"f56",floor:"5·6층",prev:0,curr:0,kwh:2345.2,amount:1394764},
+    {id:"f7",floor:"7층",prev:104181.0,curr:106416.1,kwh:2235.1,amount:885763}
+  ]},
+  {year:2026,month:3,label:"3월",total_bill:4423670,total_kwh:19299,floors:[
+    {id:"b1",floor:"B1층",prev:6215.2,curr:6228.1,kwh:12.9,amount:343362},
+    {id:"f1",floor:"1층",prev:41183.5,curr:45197.2,kwh:4013.7,amount:1097625},
+    {id:"f2",floor:"2층",prev:43682,curr:43795,kwh:113,amount:218809},
+    {id:"f3",floor:"3층",prev:82938.6,curr:85660.1,kwh:2721.3,amount:816383},
+    {id:"f4",floor:"4층",prev:130228.8,curr:131163.0,kwh:934.2,amount:401905},
+    {id:"f56",floor:"5·6층",prev:0,curr:0,kwh:3084.8,amount:1027142},
+    {id:"f7",floor:"7층",prev:106416.1,curr:107891.7,kwh:1475.6,amount:518344}
+  ]},
+  {year:2026,month:4,label:"4월",total_bill:3344620,total_kwh:13097,floors:[
+    {id:"b1",floor:"B1층",prev:6191.2,curr:6203.2,kwh:12,amount:262697},
+    {id:"f1",floor:"1층",prev:37471.3,curr:39508.6,kwh:2037.3,amount:655740},
+    {id:"f2",floor:"2층",prev:43464,curr:43573,kwh:109,amount:174969},
+    {id:"f3",floor:"3층",prev:80692.1,curr:82938.6,kwh:2246.5,amount:720605},
+    {id:"f4",floor:"4층",prev:70315.3,curr:70963.6,kwh:648.3,amount:308774},
+    {id:"f56",floor:"5·6층",prev:0,curr:0,kwh:1142.6,amount:409751},
+    {id:"f7",floor:"7층",prev:102681.0,curr:103563.5,kwh:882.5,amount:362740}
+  ]}
+];
+const WATER_DATA = [
+  {year:2026,month:3,label:"3월",amount:200050,period:"26년 01월 23일 ~ 26년 02월 22일"},
+  {year:2026,month:4,label:"4월",amount:271110,period:"26년 02월 23일 ~ 26년 03월 22일"}
+];
+
+let currentMonthIdx = ELEC_DATA.length - 1;
+let totalChartInst = null, floorChartInst = null;
+
+const fmt = n => n===0 ? '-' : Math.round(n).toLocaleString('ko-KR');
+const fmtN = n => n.toLocaleString('ko-KR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const pct = (a,b) => b===0 ? null : (a-b)/b*100;
+
+function renderMonthNav() {
+  const nav = document.getElementById('monthNav');
+  nav.innerHTML = '';
+  ELEC_DATA.forEach((d,i) => {
+    const btn = document.createElement('button');
+    btn.className = 'month-btn'+(i===currentMonthIdx?' active':'');
+    btn.textContent = d.label;
+    btn.onclick = ()=>{ currentMonthIdx=i; renderAll(); };
+    nav.appendChild(btn);
+  });
+}
+
+function renderKPI() {
+  const cur = ELEC_DATA[currentMonthIdx];
+  const prev = currentMonthIdx>0 ? ELEC_DATA[currentMonthIdx-1] : null;
+  let totalRent=0, totalMaint=0;
+  TENANTS.forEach(t=>{ if(t.status==='공실') return; totalRent+=t.rent; totalMaint+=t.maint; });
+  document.getElementById('kpiElec').textContent = fmt(cur.total_bill);
+  document.getElementById('currentPeriod').textContent = `${cur.year}년 ${cur.label}`;
+
+  const ec = document.getElementById('kpiElecChange');
+  if(prev){
+    const diff=cur.total_bill-prev.total_bill, p=pct(cur.total_bill,prev.total_bill);
+    const sign=diff>0?'+':'';
+    ec.textContent=`전월 대비 ${sign}${p.toFixed(1)}% (${sign}${fmt(Math.abs(diff))}원)`;
+    ec.className='kpi-change '+(diff>0?'up':'down');
+  } else { ec.textContent='이전 데이터 없음'; ec.className='kpi-change'; }
+
+  const w = WATER_DATA.find(w=>w.year===cur.year&&w.month===cur.month)||WATER_DATA[WATER_DATA.length-1];
+  document.getElementById('kpiWater').textContent = fmt(w.amount);
+  document.getElementById('kpiWaterPeriod').textContent = `사용기간: ${w.period}`;
+  document.getElementById('waterAmount').innerHTML = `${fmt(w.amount)}<span class="unit">원</span>`;
+  document.getElementById('waterPeriod').textContent = `사용기간: ${w.period}`;
+  document.getElementById('occupiedCount').textContent = TENANTS.filter(t=>t.status==='임대중').length;
+
+  // 청구서 원본 PDF 링크 연결
+  const yr = String(cur.year);
+  const mo = String(cur.month).padStart(2,'0');
+  const elecPath = `bills/${yr}_${mo}_전기요금.pdf`;
+  const waterPath = `bills/${yr}_${mo}_수도요금.pdf`;
+
+  function billBtn(href, label) {
+    return `<a href="${href}" download style="text-decoration:none">
+      <button class="btn btn-outline" style="font-size:11px;padding:6px 12px">📄 ${label} 원본</button>
+    </a>`;
+  }
+  function billMissing(label) {
+    return `<span style="font-size:11px;color:var(--text-dim)">📂 ${label} 파일 없음</span>`;
+  }
+
+  // fetch로 파일 존재 여부 확인 (Cloudflare Pages 환경에서만 동작)
+  Promise.allSettled([
+    fetch(elecPath, {method:'HEAD'}),
+    fetch(waterPath, {method:'HEAD'})
+  ]).then(([elecRes, waterRes]) => {
+    const elecOk = elecRes.status === 'fulfilled' && elecRes.value.ok;
+    const waterOk = waterRes.status === 'fulfilled' && waterRes.value.ok;
+    document.getElementById('elecBillArea').innerHTML = elecOk ? billBtn(elecPath,'전기요금') : billMissing('전기요금');
+    document.getElementById('waterBillArea').innerHTML = waterOk ? billBtn(waterPath,'수도요금') : billMissing('수도요금');
+  }).catch(() => {
+    // file:// 로컬 환경 - 그냥 링크 표시
+    document.getElementById('elecBillArea').innerHTML = billBtn(elecPath,'전기요금');
+    document.getElementById('waterBillArea').innerHTML = billBtn(waterPath,'수도요금');
+  });
+}
+
+function renderTenantTable() {
+  const cur = ELEC_DATA[currentMonthIdx];
+  let totalRent=0,totalMaint=0,totalElec=0,grand=0;
+  document.getElementById('tenantTable').innerHTML = TENANTS.map(t=>{
+    const ef = cur.floors.find(f=>f.id===t.id);
+    const ea = ef?ef.amount:0;
+    const isV = t.status==='공실', isQ = t.cycle==='quarterly';
+    const total = t.rent+t.maint+ea;
+    if(!isV){totalRent+=t.rent;totalMaint+=t.maint;totalElec+=ea;grand+=total;}
+    const badge = isV
+      ? `<span class="status-badge vacant"><span class="dot"></span>공실</span>`
+      : isQ
+        ? `<span class="status-badge quarterly"><span class="dot"></span>분기청구</span>`
+        : `<span class="status-badge active"><span class="dot"></span>임대중</span>`;
+    return `<tr class="${isV?'vacant':''}">
+      <td><span class="floor-badge">${t.floor}</span></td>
+      <td><span class="tenant-name">${t.tenant||'-'}</span></td>
+      <td>${badge}</td>
+      <td class="num">${t.area.toFixed(2)}</td>
+      <td class="num">${isV?'-':fmt(t.rent)}</td>
+      <td class="num">${isV?'-':fmt(t.maint)}</td>
+      <td class="num">${isV||ea===0?'-':fmt(ea)}</td>
+      <td class="num" style="font-weight:700;color:${isV?'var(--text-dim)':'var(--accent)'}">${isV?'-':fmt(total)}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('tenantTableFoot').innerHTML = `<tr>
+    <td colspan="4" style="color:var(--text-muted);font-size:12px;font-weight:400">합계 (임대중)</td>
+    <td class="num">${fmt(totalRent)}</td><td class="num">${fmt(totalMaint)}</td>
+    <td class="num">${fmt(totalElec)}</td>
+    <td class="num" style="color:var(--accent)">${fmt(grand)}</td>
+  </tr>`;
+  const vacants = TENANTS.filter(t=>t.status==='공실');
+  document.getElementById('vacantInfo').innerHTML = vacants.map(v=>
+    `<div class="vacant-item">
+      <span class="floor-badge">${v.floor}</span>
+      <span style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace">${v.area.toFixed(2)} 평</span>
+    </div>`
+  ).join('')+`<div style="font-size:11px;color:var(--text-dim);margin-top:10px">공실 ${vacants.length}개 층</div>`;
+}
+
+function renderElecTable() {
+  const cur = ELEC_DATA[currentMonthIdx];
+  const prev = currentMonthIdx>0 ? ELEC_DATA[currentMonthIdx-1] : null;
+  document.getElementById('elecMonthLabel').textContent = `${cur.year}년 ${cur.label} 기준`;
+  document.getElementById('elecTable').innerHTML = cur.floors.map(f=>{
+    const t = TENANTS.find(t=>t.id===f.id);
+    const pf = prev?prev.floors.find(p=>p.id===f.id):null;
+    let ch = '<span class="change-zero">-</span>';
+    if(pf&&pf.kwh>0){
+      const diff=f.kwh-pf.kwh, p=pct(f.kwh,pf.kwh);
+      const cls=diff>0?'change-up':diff<0?'change-down':'change-zero';
+      const arr=diff>0?'▲':diff<0?'▼':'';
+      ch=`<span class="${cls}">${arr} ${Math.abs(p).toFixed(1)}%</span>`;
+    }
+    return `<tr>
+      <td><span class="floor-badge">${f.floor}</span></td>
+      <td style="color:var(--text-muted)">${t?(t.tenant||'공실'):'-'}</td>
+      <td class="num">${f.prev>0?fmtN(f.prev):'-'}</td>
+      <td class="num">${f.curr>0?fmtN(f.curr):'-'}</td>
+      <td class="num">${fmtN(f.kwh)}</td>
+      <td class="num">${ch}</td>
+      <td class="num" style="color:${f.amount>0?'var(--text)':'var(--text-dim)'}">${fmt(f.amount)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCharts() {
+  const cur = ELEC_DATA[currentMonthIdx];
+  const COLORS=['#2563eb','#059669','#dc2626','#d97706','#7c3aed','#0891b2','#be185d'];
+  if(totalChartInst) totalChartInst.destroy();
+  totalChartInst = new Chart(document.getElementById('totalElecChart').getContext('2d'),{
+    type:'line',
+    data:{
+      labels:ELEC_DATA.map(d=>d.label),
+      datasets:[{
+        data:ELEC_DATA.map(d=>d.total_bill),
+        borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.06)',
+        borderWidth:2,fill:true,tension:.35,
+        pointBackgroundColor:ELEC_DATA.map((_,i)=>i===currentMonthIdx?'#2563eb':'#fff'),
+        pointBorderColor:'#2563eb',
+        pointRadius:ELEC_DATA.map((_,i)=>i===currentMonthIdx?6:4),
+        pointBorderWidth:2
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',borderColor:'#e4e7ef',borderWidth:1,titleColor:'#111827',bodyColor:'#6b7280',callbacks:{label:ctx=>` ${ctx.raw.toLocaleString()}원`}}},
+      scales:{
+        x:{grid:{color:'#f3f4f6'},ticks:{color:'#6b7280',font:{size:11}}},
+        y:{grid:{color:'#f3f4f6'},ticks:{color:'#6b7280',font:{size:10},callback:v=>(v/10000).toFixed(0)+'만'}}
+      }
+    }
+  });
+  if(floorChartInst) floorChartInst.destroy();
+  floorChartInst = new Chart(document.getElementById('floorElecChart').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:cur.floors.map(f=>f.floor),
+      datasets:[{
+        data:cur.floors.map(f=>f.kwh),
+        backgroundColor:COLORS.map(c=>c+'22'),
+        borderColor:COLORS,borderWidth:1.5,borderRadius:4
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',borderColor:'#e4e7ef',borderWidth:1,titleColor:'#111827',bodyColor:'#6b7280',callbacks:{label:ctx=>` ${ctx.raw.toLocaleString()} kWh`}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#6b7280',font:{size:11}}},
+        y:{grid:{color:'#f3f4f6'},ticks:{color:'#6b7280',font:{size:10}}}
+      }
+    }
+  });
+}
+
+function renderNoticeGrid() {
+  const cur = ELEC_DATA[currentMonthIdx];
+  document.getElementById('noticeGrid').innerHTML = TENANTS.filter(t=>t.status==='임대중').map(t=>{
+    const ef=cur.floors.find(f=>f.id===t.id), ea=ef?ef.amount:0;
+    const total=t.rent+t.maint+ea;
+    return `<div class="notice-card">
+      <div class="notice-floor">${t.floor}${t.cycle==='quarterly'?' · 분기청구':''}</div>
+      <div class="notice-tenant">${t.tenant}</div>
+      <div class="notice-total">${fmt(total)}원</div>
+      <div class="notice-breakdown">
+        <div class="notice-row"><span>임대료</span><span class="notice-val">${fmt(t.rent)}</span></div>
+        <div class="notice-row"><span>관리비</span><span class="notice-val">${fmt(t.maint)}</span></div>
+        <div class="notice-row"><span>전기료</span><span class="notice-val">${fmt(ea)}</span></div>
+      </div>
+      <button class="btn btn-primary" onclick="generatePDF('${t.id}')">📄 고지서 PDF 출력</button>
+    </div>`;
+  }).join('');
+}
+
+function generatePDF(tenantId) {
+  const cur=ELEC_DATA[currentMonthIdx], t=TENANTS.find(t=>t.id===tenantId);
+  if(!t) return;
+  const ef=cur.floors.find(f=>f.id===tenantId), ea=ef?ef.amount:0;
+  const total=t.rent+t.maint+ea;
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const ml=`${cur.year}. ${String(cur.month).padStart(2,'0')}`;
+  doc.setFontSize(20);doc.setFont('helvetica','bold');doc.text('Myeongjin Building',105,28,{align:'center'});
+  doc.setFontSize(11);doc.setFont('helvetica','normal');doc.text('Rent Payment Notice',105,36,{align:'center'});
+  doc.setFontSize(9);doc.setTextColor(120,120,120);doc.text(BUILDING.address,105,43,{align:'center'});
+  doc.setTextColor(0,0,0);doc.setLineWidth(.5);doc.line(20,48,190,48);
+  doc.setFontSize(13);doc.setFont('helvetica','bold');doc.text(`${t.floor}  ${t.tenant}`,20,60);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);
+  doc.text(`Payment Period: ${ml}`,20,68);doc.text('Due Date: 10th of the month',20,75);
+  doc.setFillColor(239,246,255);doc.roundedRect(20,82,170,22,3,3,'F');
+  doc.setFontSize(10);doc.setTextColor(80,80,80);doc.text('Total Amount (VAT included)',30,91);
+  doc.setFontSize(18);doc.setFont('helvetica','bold');doc.setTextColor(37,99,235);
+  doc.text(`${total.toLocaleString()} KRW`,30,101);doc.setTextColor(0,0,0);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.line(20,115,190,115);
+  let y=125;
+  [['Rent',t.rent],['Maintenance Fee',t.maint],['Electricity',ea]].forEach(([label,val])=>{
+    doc.setTextColor(100,100,100);doc.text(label,30,y);
+    doc.setTextColor(0,0,0);doc.text(`${val.toLocaleString()} KRW`,175,y,{align:'right'});y+=10;
+  });
+  doc.setLineWidth(.3);doc.line(20,y,190,y);y+=9;
+  doc.setFont('helvetica','bold');doc.text('Total',30,y);
+  doc.setTextColor(37,99,235);doc.text(`${total.toLocaleString()} KRW`,175,y,{align:'right'});
+  doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,100,100);
+  doc.text('Account: '+BUILDING.account,20,y+20);
+  doc.text('* Tax invoice issued on the 1st business day of each month.',20,y+27);
+  doc.setFontSize(10);doc.setTextColor(0,0,0);doc.text('Myeongjin Building Management Office',105,265,{align:'center'});
+  doc.setFontSize(8);doc.setTextColor(150,150,150);doc.text(`© ${cur.year} DSR, DSR Wire. All rights reserved.`,105,285,{align:'center'});
+  doc.save(`명진빌딩_고지서_${t.floor}_${ml}.pdf`);
+}
+
+function downloadWaterBill() {
+  const cur=ELEC_DATA[currentMonthIdx];
+  const w=WATER_DATA.find(w=>w.year===cur.year&&w.month===cur.month)||WATER_DATA[WATER_DATA.length-1];
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  doc.setFontSize(18);doc.setFont('helvetica','bold');doc.text('Water Bill',105,30,{align:'center'});
+  doc.setFontSize(11);doc.setFont('helvetica','normal');doc.text('Myeongjin Building',105,39,{align:'center'});
+  doc.setFontSize(9);doc.setTextColor(120,120,120);doc.text(`Usage Period: ${w.period}`,105,47,{align:'center'});
+  doc.setTextColor(0,0,0);doc.setLineWidth(.5);doc.line(20,53,190,53);
+  doc.setFillColor(236,253,245);doc.roundedRect(55,62,100,20,3,3,'F');
+  doc.setFontSize(16);doc.setFont('helvetica','bold');doc.setTextColor(5,150,105);
+  doc.text(`${w.amount.toLocaleString()} KRW`,105,75,{align:'center'});
+  doc.setTextColor(0,0,0);doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(100,100,100);
+  doc.text('* Water bill is paid in full by the building owner.',105,92,{align:'center'});
+  doc.setFontSize(8);doc.setTextColor(150,150,150);doc.text(`© ${cur.year} DSR, DSR Wire. All rights reserved.`,105,285,{align:'center'});
+  doc.save(`명진빌딩_수도요금_${cur.year}${String(cur.month).padStart(2,'0')}.pdf`);
+}
+
+function renderAll(){renderMonthNav();renderKPI();renderTenantTable();renderElecTable();renderCharts();renderNoticeGrid();}
+renderAll();
+</script>
+</body>
+</html>

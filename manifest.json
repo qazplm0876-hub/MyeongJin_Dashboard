@@ -1,0 +1,11 @@
+{
+  "name": "명진빌딩 자산관리 대시보드",
+  "short_name": "명진빌딩",
+  "description": "명진빌딩 층별 임대현황, 전기요금 추이, 고지서 발행 통합 관리 대시보드",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#4f7cff",
+  "icons": []
+}
