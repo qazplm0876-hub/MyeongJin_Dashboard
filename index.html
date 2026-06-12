@@ -5,8 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
   <title>명진빌딩 자산관리 대시보드</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js">
+// 시작
+loadData();
+</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+// 시작
+loadData();
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
     :root {
@@ -27,10 +34,8 @@
     .logo-sub{font-size:11px;color:var(--text-muted);}
     .header-right{display:flex;align-items:center;gap:10px;}
     .period-badge{font-size:12px;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);padding:4px 12px;border-radius:6px;font-weight:500;}
-    .month-nav{display:flex;gap:4px;}
-    .month-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-muted);padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Noto Sans KR',sans-serif;font-weight:500;transition:all .15s;}
-    .month-btn:hover{border-color:var(--accent);color:var(--accent);}
-    .month-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+    .month-select{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif;font-weight:500;outline:none;height:34px;}
+    .month-select:focus{border-color:var(--accent);}
 
     /* 레이아웃 */
     main{padding:24px 32px;max-width:1400px;margin:0 auto;}
@@ -38,10 +43,10 @@
     /* KPI */
     .kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px;}
     .kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px 28px;}
-    .kpi-label{font-size:13px;color:var(--text-muted);font-weight:500;margin-bottom:10px;}
+    .kpi-label{font-size:17px;color:var(--text-muted);font-weight:600;margin-bottom:10px;}
     .kpi-row{display:flex;align-items:baseline;gap:5px;}
-    .kpi-value{font-family:'DM Mono',monospace;font-size:34px;font-weight:500;letter-spacing:-.5px;}
-    .kpi-unit{font-size:14px;color:var(--text-muted);}
+    .kpi-value{font-family:'Noto Sans KR',sans-serif;font-size:34px;font-weight:700;letter-spacing:-.5px;}
+    .kpi-unit{font-size:14px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;}
     .kpi-sub{font-size:12px;color:var(--text-muted);margin-top:6px;}
     .kpi-change{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;margin-top:6px;}
     .kpi-change.down{background:var(--green-light);color:var(--green);}
@@ -69,11 +74,11 @@
     tbody tr:hover{background:var(--surface2);}
     tbody tr.vacant{opacity:.5;}
     td{padding:11px 16px;font-size:13px;white-space:nowrap;}
-    td.num{text-align:right;font-family:'DM Mono',monospace;font-size:12px;}
+    td.num{text-align:right;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:500;}
     tfoot td{padding:11px 16px;font-size:13px;font-weight:700;background:var(--surface2);border-top:2px solid var(--border2);}
-    tfoot td.num{text-align:right;font-family:'DM Mono',monospace;font-size:12px;}
+    tfoot td.num{text-align:right;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;}
 
-    .floor-badge{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);font-weight:500;}
+    .floor-badge{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 8px;font-family:'Noto Sans KR',sans-serif;font-size:11px;color:var(--text-muted);font-weight:600;}
     .tenant-name{font-weight:500;font-size:13px;color:var(--text);}
 
     .status-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 9px;border-radius:99px;font-weight:600;white-space:nowrap;}
@@ -86,7 +91,7 @@
     .side-panel{display:flex;flex-direction:column;gap:14px;}
     .info-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
     .info-card-title{font-size:14px;font-weight:700;margin-bottom:14px;}
-    .water-amount{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--green);letter-spacing:-.5px;}
+    .water-amount{font-family:'Noto Sans KR',sans-serif;font-size:26px;font-weight:700;color:var(--green);}
     .water-amount .unit{font-size:13px;color:var(--text-muted);margin-left:2px;font-family:'Noto Sans KR',sans-serif;}
     .water-period{font-size:11px;color:var(--text-muted);margin-top:4px;margin-bottom:14px;}
 
@@ -115,10 +120,10 @@
     .notice-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.07);border-color:var(--accent);}
     .notice-floor{font-size:11px;color:var(--text-muted);margin-bottom:3px;font-weight:500;}
     .notice-tenant{font-size:14px;font-weight:700;margin-bottom:10px;}
-    .notice-total{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--accent);margin-bottom:10px;}
+    .notice-total{font-family:'Noto Sans KR',sans-serif;font-size:16px;font-weight:700;color:var(--accent);margin-bottom:10px;}
     .notice-breakdown{font-size:11px;color:var(--text-muted);display:flex;flex-direction:column;gap:3px;padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border);}
     .notice-row{display:flex;justify-content:space-between;}
-    .notice-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);}
+    .notice-val{font-family:'Noto Sans KR',sans-serif;font-size:11px;color:var(--text);font-weight:500;}
 
     @media(max-width:1100px){.main-grid{grid-template-columns:1fr;}.kpi-grid{grid-template-columns:repeat(2,1fr);}.chart-grid{grid-template-columns:1fr;}}
     @media(max-width:600px){main{padding:14px;}header{padding:0 14px;}.kpi-grid{grid-template-columns:1fr 1fr;}}
@@ -131,23 +136,25 @@
     <div class="logo-sub">서울특별시 강남구 봉은사로 203</div>
   </div>
   <div class="header-right">
-    <div class="period-badge" id="currentPeriod">2026년 4월</div>
-    <div class="month-nav" id="monthNav"></div>
+    <div class="period-badge" id="currentPeriod">2026년 3월</div>
+    <select class="month-select" id="monthSelect" onchange="onMonthChange(this.value)"></select>
   </div>
 </header>
 
 <main>
   <div class="kpi-grid">
     <div class="kpi-card">
-      <div class="kpi-label">당월 전기요금</div>
+      <div class="kpi-label">⚡ 당월 전기요금</div>
       <div class="kpi-row"><div class="kpi-value" id="kpiElec">-</div><div class="kpi-unit">원</div></div>
+      <div class="kpi-sub" id="kpiElecPeriod" style="display:none"></div>
       <div class="kpi-change" id="kpiElecChange">-</div>
       <div style="margin-top:12px" id="elecBillArea"></div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">당월 수도요금</div>
+      <div class="kpi-label">💧 당월 수도요금</div>
       <div class="kpi-row"><div class="kpi-value" id="kpiWater">-</div><div class="kpi-unit">원</div></div>
       <div class="kpi-sub" id="kpiWaterPeriod">-</div>
+      <div class="kpi-change" id="kpiWaterChange">-</div>
       <div style="margin-top:12px" id="waterBillArea"></div>
     </div>
   </div>
@@ -172,15 +179,23 @@
       </table>
     </div>
     <div class="side-panel">
+
       <div class="info-card">
-        <div class="info-card-title">💧 수도요금</div>
-        <div class="water-amount" id="waterAmount">-<span class="unit">원</span></div>
-        <div class="water-period" id="waterPeriod">사용기간: -</div>
-        <!-- 청구서 다운로드: KPI 카드에서 제공 -->
+        <div class="info-card-title" style="margin-bottom:14px">📑 세금계산서 발급</div>
+        <div id="invoiceInfo" style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.6;"></div>
+        <button class="btn btn-primary" onclick="generateInvoiceXlsx()">
+          📥 <span id="invoiceBtnLabel">세금계산서 양식 다운로드</span>
+        </button>
       </div>
+
       <div class="info-card">
-        <div class="info-card-title">🏢 공실 현황</div>
-        <div id="vacantInfo"></div>
+        <div class="info-card-title" style="margin-bottom:14px">⚠️ 미수금 현황</div>
+        <div id="arrearsInfo"></div>
+        
+        <div id="arrearsDetail" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:14px">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">미수금 상세 내역</div>
+          <div id="arrearsDetailContent"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -229,14 +244,26 @@ const BUILDING = {
 };
 const TENANTS = [
   {id:"b1",  floor:"B1층",  tenant:null,          status:"공실",  area:115.97, rent:0,        maint:0,       cycle:"monthly"},
-  {id:"f1",  floor:"1층",   tenant:"타마시헤어",  status:"임대중", area:60.51,  rent:9900000,  maint:2013000, cycle:"monthly"},
+  {id:"f1",  floor:"1층",   tenant:"타마시헤어",  status:"임대중", area:60.51,  rent:9900000,  maint:2013000, cycle:"monthly", prevTenant:"구테로이테 언주점", prevUntilMonth:3},
   {id:"f2",  floor:"2층",   tenant:null,          status:"공실",  area:65.72,  rent:0,        maint:0,       cycle:"monthly"},
-  {id:"f3",  floor:"3층",   tenant:"독한짐",      status:"임대중", area:65.62,  rent:770000,   maint:1100000, cycle:"monthly"},
+  {id:"f3",  floor:"3층",   tenant:"독한짐",      status:"임대중", area:65.62,  rent:7700000,  maint:1100000, cycle:"monthly"},
   {id:"f4",  floor:"4층",   tenant:"㈜보이스인",  status:"임대중", area:63.97,  rent:5306780,  maint:2604588, cycle:"monthly"},
   {id:"f56", floor:"5·6층", tenant:"DSR제강",     status:"임대중", area:109.07, rent:14060475, maint:1874730, cycle:"monthly"},
   {id:"f7",  floor:"7층",   tenant:"DSRK",        status:"임대중", area:61.36,  rent:1485000,  maint:198000,  cycle:"quarterly"}
 ];
-const ELEC_DATA = [
+
+// ─── 세금계산서 발급 매핑 ────────────────────────────────────────────────
+// items: rent=임대료, maint=관리비, elec=전기사용료
+// cycle: monthly=매월 발급, quarterly=분기 발급 (분기 첫 달에 직전 분기 청구)
+// rentFreeMonth: 해당 월에 임대료 행 제외
+const INVOICE_MAPPING = [
+  {tenantId:"f7",  invoiceName:"DSRK",     code:64402, email:"dsrk1000@dsr.com",     items:["rent","maint"],        cycle:"quarterly"},
+  {tenantId:"f56", invoiceName:"DSR제강",  code:25615, email:"dsr2130@dsr.com",      items:["rent","maint"],        cycle:"monthly"},
+  {tenantId:"f4",  invoiceName:"보이스인", code:64006, email:"sales@thevoicein.com", items:["rent","maint","elec"], cycle:"monthly"},
+  {tenantId:"f3",  invoiceName:"㈜독한",   code:65295, email:"dokhangym@naver.com",  items:["rent","maint","elec"], cycle:"monthly", rentFreeMonth:12},
+  {tenantId:"f1",  invoiceName:"장은결",   code:67224, email:"tamasihair@gmail.com", items:["rent","maint","elec"], cycle:"monthly"}
+];
+const SAMPLE_ELEC_DATA = [
   {year:2026,month:1,label:"1월",total_bill:5819079,total_kwh:31714,floors:[
     {id:"b1",floor:"B1층",prev:6191.2,curr:6203.2,kwh:12.9,amount:0},
     {id:"f1",floor:"1층",prev:37471.3,curr:39508.6,kwh:4013.7,amount:966782},
@@ -263,23 +290,36 @@ const ELEC_DATA = [
     {id:"f4",floor:"4층",prev:130228.8,curr:131163.0,kwh:934.2,amount:401905},
     {id:"f56",floor:"5·6층",prev:0,curr:0,kwh:3084.8,amount:1027142},
     {id:"f7",floor:"7층",prev:106416.1,curr:107891.7,kwh:1475.6,amount:518344}
-  ]},
-  {year:2026,month:4,label:"4월",total_bill:3344620,total_kwh:13097,floors:[
-    {id:"b1",floor:"B1층",prev:6191.2,curr:6203.2,kwh:12,amount:262697},
-    {id:"f1",floor:"1층",prev:37471.3,curr:39508.6,kwh:2037.3,amount:655740},
-    {id:"f2",floor:"2층",prev:43464,curr:43573,kwh:109,amount:174969},
-    {id:"f3",floor:"3층",prev:80692.1,curr:82938.6,kwh:2246.5,amount:720605},
-    {id:"f4",floor:"4층",prev:70315.3,curr:70963.6,kwh:648.3,amount:308774},
-    {id:"f56",floor:"5·6층",prev:0,curr:0,kwh:1142.6,amount:409751},
-    {id:"f7",floor:"7층",prev:102681.0,curr:103563.5,kwh:882.5,amount:362740}
   ]}
 ];
-const WATER_DATA = [
-  {year:2026,month:3,label:"3월",amount:200050,period:"26년 01월 23일 ~ 26년 02월 22일"},
-  {year:2026,month:4,label:"4월",amount:271110,period:"26년 02월 23일 ~ 26년 03월 22일"}
+const SAMPLE_WATER_DATA = [
+  {year:2026,month:1,label:"1월",amount:185000,period:"25년 11월 23일 ~ 25년 12월 22일"},
+  {year:2026,month:2,label:"2월",amount:192000,period:"25년 12월 23일 ~ 26년 01월 22일"},
+  {year:2026,month:3,label:"3월",amount:200050,period:"26년 01월 23일 ~ 26년 02월 22일"}
 ];
 
-let currentMonthIdx = ELEC_DATA.length - 1;
+// ─── 동적 데이터 로딩 ────────────────────────────────────────────────────
+let ELEC_DATA = [];
+let WATER_DATA = [];
+let currentMonthIdx = 0;
+
+async function loadData() {
+  try {
+    const res = await fetch('bills/data.json?t=' + Date.now());
+    if (!res.ok) throw new Error('data.json 없음');
+    const data = await res.json();
+    ELEC_DATA = data.months || [];
+    WATER_DATA = data.water || [];
+    currentMonthIdx = ELEC_DATA.length - 1;
+  } catch(e) {
+    // 파일 없으면 하드코딩 샘플 데이터 사용
+    console.warn('data.json 로드 실패, 샘플 데이터 사용:', e);
+    ELEC_DATA = SAMPLE_ELEC_DATA;
+    WATER_DATA = SAMPLE_WATER_DATA;
+    currentMonthIdx = ELEC_DATA.length - 1;
+  }
+  renderAll();
+}
 let totalChartInst = null, floorChartInst = null;
 
 const fmt = n => n===0 ? '-' : Math.round(n).toLocaleString('ko-KR');
@@ -287,15 +327,15 @@ const fmtN = n => n.toLocaleString('ko-KR',{minimumFractionDigits:1,maximumFract
 const pct = (a,b) => b===0 ? null : (a-b)/b*100;
 
 function renderMonthNav() {
-  const nav = document.getElementById('monthNav');
-  nav.innerHTML = '';
-  ELEC_DATA.forEach((d,i) => {
-    const btn = document.createElement('button');
-    btn.className = 'month-btn'+(i===currentMonthIdx?' active':'');
-    btn.textContent = d.label;
-    btn.onclick = ()=>{ currentMonthIdx=i; renderAll(); };
-    nav.appendChild(btn);
-  });
+  const sel = document.getElementById('monthSelect');
+  sel.innerHTML = ELEC_DATA.map((d,i) =>
+    `<option value="${i}" ${i===currentMonthIdx?'selected':''}>${d.year}년 ${d.label}</option>`
+  ).join('');
+}
+
+function onMonthChange(idx) {
+  currentMonthIdx = parseInt(idx);
+  renderAll();
 }
 
 function renderKPI() {
@@ -310,16 +350,38 @@ function renderKPI() {
   if(prev){
     const diff=cur.total_bill-prev.total_bill, p=pct(cur.total_bill,prev.total_bill);
     const sign=diff>0?'+':'';
-    ec.textContent=`전월 대비 ${sign}${p.toFixed(1)}% (${sign}${fmt(Math.abs(diff))}원)`;
+    ec.textContent=`전월 대비 ${sign}${p.toFixed(1)}%  (${fmt(prev.total_bill)}원 → ${fmt(cur.total_bill)}원)`;
     ec.className='kpi-change '+(diff>0?'up':'down');
   } else { ec.textContent='이전 데이터 없음'; ec.className='kpi-change'; }
 
   const w = WATER_DATA.find(w=>w.year===cur.year&&w.month===cur.month)||WATER_DATA[WATER_DATA.length-1];
   document.getElementById('kpiWater').textContent = fmt(w.amount);
   document.getElementById('kpiWaterPeriod').textContent = `사용기간: ${w.period}`;
-  document.getElementById('waterAmount').innerHTML = `${fmt(w.amount)}<span class="unit">원</span>`;
-  document.getElementById('waterPeriod').textContent = `사용기간: ${w.period}`;
-  document.getElementById('occupiedCount').textContent = TENANTS.filter(t=>t.status==='임대중').length;
+
+  // 수도요금 전월대비
+  const prevW = WATER_DATA.find(wd => wd.year === w.year && wd.month === w.month - 1)
+             || (w.month === 1 ? null : null);
+  const wc = document.getElementById('kpiWaterChange');
+  const prevWater = WATER_DATA.find(wd => wd.month === w.month - 1 && wd.year === w.year)
+                 || (w.month === 1 ? WATER_DATA.find(wd => wd.month === 12 && wd.year === w.year - 1) : null);
+  if (prevWater) {
+    const wd = w.amount - prevWater.amount;
+    const wp = pct(w.amount, prevWater.amount);
+    const ws = wd > 0 ? '+' : '';
+    wc.textContent = `전월 대비 ${ws}${wp.toFixed(1)}%  (${fmt(prevWater.amount)}원 → ${fmt(w.amount)}원)`;
+    wc.className = 'kpi-change ' + (wd > 0 ? 'up' : 'down');
+  } else { wc.textContent = '이전 데이터 없음'; wc.className = 'kpi-change'; }
+
+  // 전기요금 사용기간: 전월 16일 ~ 선택월 15일 자동 계산
+  const elecPeriodEl = document.getElementById('kpiElecPeriod');
+  const prevM = cur.month === 1 ? 12 : cur.month - 1;
+  const prevY = cur.month === 1 ? cur.year - 1 : cur.year;
+  const elecPeriod = `${String(prevY).slice(2)}년 ${prevM}월 16일 ~ ${String(cur.year).slice(2)}년 ${cur.month}월 15일`;
+  elecPeriodEl.textContent = `사용기간: ${elecPeriod}`;
+  elecPeriodEl.style.display = '';
+
+  // 임대중 카운트 (f1, f3, f4, f56 = 4개)
+  document.getElementById('occupiedCount').textContent = TENANTS.filter(t=>['f1','f3','f4','f56'].includes(t.id)).length;
 
   // 청구서 원본 PDF 링크 연결
   const yr = String(cur.year);
@@ -360,6 +422,7 @@ function renderTenantTable() {
     const ea = ef?ef.amount:0;
     const isV = t.status==='공실', isQ = t.cycle==='quarterly';
     const total = t.rent+t.maint+ea;
+    const tenantName = (t.prevTenant && cur.month <= t.prevUntilMonth) ? t.prevTenant : t.tenant;
     if(!isV){totalRent+=t.rent;totalMaint+=t.maint;totalElec+=ea;grand+=total;}
     const badge = isV
       ? `<span class="status-badge vacant"><span class="dot"></span>공실</span>`
@@ -368,7 +431,7 @@ function renderTenantTable() {
         : `<span class="status-badge active"><span class="dot"></span>임대중</span>`;
     return `<tr class="${isV?'vacant':''}">
       <td><span class="floor-badge">${t.floor}</span></td>
-      <td><span class="tenant-name">${t.tenant||'-'}</span></td>
+      <td><span class="tenant-name">${tenantName||'-'}</span></td>
       <td>${badge}</td>
       <td class="num">${t.area.toFixed(2)}</td>
       <td class="num">${isV?'-':fmt(t.rent)}</td>
@@ -383,13 +446,7 @@ function renderTenantTable() {
     <td class="num">${fmt(totalElec)}</td>
     <td class="num" style="color:var(--accent)">${fmt(grand)}</td>
   </tr>`;
-  const vacants = TENANTS.filter(t=>t.status==='공실');
-  document.getElementById('vacantInfo').innerHTML = vacants.map(v=>
-    `<div class="vacant-item">
-      <span class="floor-badge">${v.floor}</span>
-      <span style="font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace">${v.area.toFixed(2)} 평</span>
-    </div>`
-  ).join('')+`<div style="font-size:11px;color:var(--text-dim);margin-top:10px">공실 ${vacants.length}개 층</div>`;
+
 }
 
 function renderElecTable() {
@@ -467,7 +524,7 @@ function renderCharts() {
 
 function renderNoticeGrid() {
   const cur = ELEC_DATA[currentMonthIdx];
-  document.getElementById('noticeGrid').innerHTML = TENANTS.filter(t=>t.status==='임대중').map(t=>{
+  document.getElementById('noticeGrid').innerHTML = TENANTS.filter(t=>['f1','f3','f4'].includes(t.id)).map(t=>{
     const ef=cur.floors.find(f=>f.id===t.id), ea=ef?ef.amount:0;
     const total=t.rent+t.maint+ea;
     return `<div class="notice-card">
@@ -485,6 +542,13 @@ function renderNoticeGrid() {
 }
 
 function generatePDF(tenantId) {
+  window.ELEC_DATA = ELEC_DATA;
+  window.WATER_DATA = WATER_DATA;
+  window.TENANTS = TENANTS;
+  const url = `고지서.html?floor=${tenantId}&month=${currentMonthIdx}`;
+  window.open(url, '_blank', 'width=900,height=1100,scrollbars=yes');
+}
+function generatePDF_old(tenantId) {
   const cur=ELEC_DATA[currentMonthIdx], t=TENANTS.find(t=>t.id===tenantId);
   if(!t) return;
   const ef=cur.floors.find(f=>f.id===tenantId), ea=ef?ef.amount:0;
@@ -538,8 +602,591 @@ function downloadWaterBill() {
   doc.save(`명진빌딩_수도요금_${cur.year}${String(cur.month).padStart(2,'0')}.pdf`);
 }
 
-function renderAll(){renderMonthNav();renderKPI();renderTenantTable();renderElecTable();renderCharts();renderNoticeGrid();}
-renderAll();
+
+
+// ─── 구테로이테 미수금 데이터 ─────────────────────────────────────────
+const GUTEROITE = {
+  name: "구테로이테 언주점",
+  floor: "1층",
+  status: "퇴거",
+  base: 108092252,
+  schedule: [
+    { month: "기초",  planned: null,      paid: null,      note: "" },
+    { month: "3월",   planned: 4000000,   paid: 4000000,   note: "" },
+    { month: "4월",   planned: 4850000,   paid: 4850000,   note: "" },
+    { month: "5월",   planned: 5880000,   paid: null,      note: "" },
+    { month: "6월",   planned: 7120000,   paid: null,      note: "" },
+    { month: "7월",   planned: 8630000,   paid: null,      note: "" },
+    { month: "8월",   planned: 10460000,  paid: null,      note: "" },
+    { month: "9월",   planned: 12680000,  paid: null,      note: "" },
+    { month: "10월",  planned: 15370000,  paid: null,      note: "" },
+    { month: "11월",  planned: 18630000,  paid: null,      note: "" },
+    { month: "12월",  planned: 20472252,  paid: null,      note: "" },
+  ]
+};
+
+function getGuteroiteBalance() {
+  const totalPaid = GUTEROITE.schedule.reduce((sum, r) => sum + (r.paid || 0), 0);
+  return GUTEROITE.base - totalPaid;
+}
+
+function openArrearsModal() {
+  const balance = getGuteroiteBalance();
+  const totalPaid = GUTEROITE.schedule.reduce((sum, r) => sum + (r.paid || 0), 0);
+  const totalPlanned = GUTEROITE.schedule.reduce((sum, r) => sum + (r.planned || 0), 0);
+
+  const rows = GUTEROITE.schedule.map(r => {
+    const isDone = r.paid !== null;
+    const balance_row = r.month === '기초' ? GUTEROITE.base : null;
+    return `<tr style="${isDone && r.month !== '기초' ? 'color:var(--text-muted)' : ''}">
+      <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:center;font-weight:${r.month==='기초'?'700':'400'}">${r.month}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:right;font-family:'DM Mono',monospace;font-size:12px">
+        ${r.planned ? `<span style="${isDone?'text-decoration:line-through':''}">${fmt(r.planned)}</span>` : '-'}
+      </td>
+      <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:right;font-family:'DM Mono',monospace;font-size:12px;color:${r.paid?'var(--green)':'var(--text-dim)'}">
+        ${r.paid ? fmt(r.paid) : '-'}
+      </td>
+      <td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:right;font-family:'DM Mono',monospace;font-size:12px">
+        ${r.month === '기초' ? fmt(GUTEROITE.base) : '-'}
+      </td>
+    </tr>`;
+  }).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'arrearsModal';
+  modal.style.cssText = `position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px`;
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:12px;width:100%;max-width:580px;max-height:85vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surface)">
+        <div>
+          <div style="font-size:16px;font-weight:700">${GUTEROITE.name}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${GUTEROITE.floor} · 퇴거 · 미수금 관리</div>
+        </div>
+        <button onclick="document.getElementById('arrearsModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);padding:4px 8px">✕</button>
+      </div>
+
+      <div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;border-bottom:1px solid var(--border)">
+        <div style="background:var(--surface2);border-radius:8px;padding:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">기초 미수금</div>
+          <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600">${fmt(GUTEROITE.base)}원</div>
+        </div>
+        <div style="background:var(--green-light);border-radius:8px;padding:12px">
+          <div style="font-size:11px;color:var(--green);margin-bottom:4px">누적 상환금액</div>
+          <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:var(--green)">${fmt(totalPaid)}원</div>
+        </div>
+        <div style="background:var(--red-light);border-radius:8px;padding:12px">
+          <div style="font-size:11px;color:var(--red);margin-bottom:4px">현재 미수금 잔액</div>
+          <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:var(--red)">${fmt(balance)}원</div>
+        </div>
+      </div>
+
+      <div style="padding:0 24px 20px">
+        <table style="width:100%;border-collapse:collapse;margin-top:16px">
+          <thead>
+            <tr style="background:var(--surface2)">
+              <th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--text-muted);font-weight:600;border-bottom:2px solid var(--border)">지급월</th>
+              <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;border-bottom:2px solid var(--border)">상환 예정금액</th>
+              <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;border-bottom:2px solid var(--border)">상환 금액</th>
+              <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--text-muted);font-weight:600;border-bottom:2px solid var(--border)">미수금 잔액</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+          <tfoot>
+            <tr style="background:var(--surface2);font-weight:700">
+              <td style="padding:10px 12px;border-top:2px solid var(--border);font-size:13px">합계</td>
+              <td style="padding:10px 12px;border-top:2px solid var(--border);text-align:right;font-family:'DM Mono',monospace;font-size:12px">${fmt(totalPlanned)}</td>
+              <td style="padding:10px 12px;border-top:2px solid var(--border);text-align:right;font-family:'DM Mono',monospace;font-size:12px;color:var(--green)">${fmt(totalPaid)}</td>
+              <td style="padding:10px 12px;border-top:2px solid var(--border);text-align:right;font-family:'DM Mono',monospace;font-size:12px;color:var(--red)">${fmt(balance)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  `;
+  modal.addEventListener('click', e => { if(e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function renderArrears() {
+  const balance = getArrearsBalance('guteroite');
+  const a = ARREARS['guteroite'];
+  const nextExpected = a.schedule.find(r => r.expected && !r.paid);
+
+  document.getElementById('arrearsInfo').innerHTML = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">현재 미수금 잔액</div>
+      <div style="font-size:24px;font-weight:700;color:var(--red)">${(balance + 41227962).toLocaleString('ko-KR')}원</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="showArrearsModal('guteroite')">
+      <div>
+        <div style="font-size:12px;font-weight:600">구테로이테 언주점</div>
+        <div style="font-size:11px;color:var(--text-muted)">1층 · 퇴거</div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--red)">${balance.toLocaleString('ko-KR')}원 ›</div>
+    </div>
+    ${nextExpected ? `<div style="font-size:11px;color:var(--amber);margin-top:10px">⚠ ${nextExpected.month} 상환 예정: ${nextExpected.expected.toLocaleString('ko-KR')}원</div>` : ''}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;margin-top:4px" onclick="showArrearsModal('dokhan')">
+      <div>
+        <div style="font-size:12px;font-weight:600">독한짐</div>
+        <div style="font-size:11px;color:var(--text-muted)">3층 · 임대중</div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--red)">${(41227962).toLocaleString('ko-KR')}원 ›</div>
+    </div>
+  `;
+}
+
+// ─── 미수금 데이터 ────────────────────────────────────────────────────────
+const ARREARS = {
+  guteroite: {
+    name: "구테로이테 언주점",
+    floor: "1층",
+    status: "퇴거",
+    base: 108092252,
+    schedule: [
+      { month: "기초", expected: null,     paid: null    },
+      { month: "3월",  expected: 4000000,  paid: 4000000 },
+      { month: "4월",  expected: 4850000,  paid: 4850000 },
+      { month: "5월",  expected: 5880000,  paid: null    },
+      { month: "6월",  expected: 7120000,  paid: null    },
+      { month: "7월",  expected: 8630000,  paid: null    },
+      { month: "8월",  expected: 10460000, paid: null    },
+      { month: "9월",  expected: 12680000, paid: null    },
+      { month: "10월", expected: 15370000, paid: null    },
+      { month: "11월", expected: 18630000, paid: null    },
+      { month: "12월", expected: 20472252, paid: null    },
+    ]
+  },
+  dokhan: {
+    name: "독한짐",
+    floor: "3층",
+    status: "임대중",
+    items: [
+      { label: "임대료", amount: 31169757 },
+      { label: "관리비", amount: 5500000 },
+      { label: "전기료", amount: 4558205 },
+    ]
+  }
+};
+
+function getArrearsBalance(key) {
+  const a = ARREARS[key];
+  const totalPaid = a.schedule.reduce((s, r) => s + (r.paid || 0), 0);
+  return a.base - totalPaid;
+}
+
+function showArrearsModal(key) {
+  if (key === 'dokhan') { showDokhanModal(); return; }
+  const a = ARREARS[key];
+  const balance = getArrearsBalance(key);
+  const totalExpected = a.schedule.reduce((s, r) => s + (r.expected || 0), 0);
+  const totalPaid = a.schedule.reduce((s, r) => s + (r.paid || 0), 0);
+
+  let runningBalance = a.base;
+  const rows = a.schedule.map(r => {
+    const isPaid = r.paid !== null;
+    if (r.paid) runningBalance -= r.paid;
+    const balanceDisplay = r.month === '기초' ? a.base : (isPaid ? runningBalance : '');
+    return `<tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #e4e7ef;text-align:center;font-weight:500;color:${isPaid?'#6b7280':'#111827'}">${r.month}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e4e7ef;text-align:right;font-variant-numeric:tabular-nums;font-size:13px;color:${isPaid?'#6b7280':'#111827'}">
+        ${r.expected ? `<span style="${isPaid?'text-decoration:line-through':''}">${r.expected.toLocaleString('ko-KR')}</span>` : '-'}
+      </td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e4e7ef;text-align:right;font-variant-numeric:tabular-nums;font-size:13px;color:${isPaid?'#059669':'#9ca3af'}">
+        ${r.paid ? r.paid.toLocaleString('ko-KR') : '-'}
+      </td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e4e7ef;text-align:right;font-variant-numeric:tabular-nums;font-size:13px">
+        ${balanceDisplay !== '' ? balanceDisplay.toLocaleString('ko-KR') : '-'}
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('arrearsModal').innerHTML = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;display:flex;align-items:center;justify-content:center" onclick="if(event.target===this)closeArrearsModal()">
+      <div style="background:#fff;border-radius:12px;width:600px;max-height:85vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+        <div style="padding:20px 24px;border-bottom:1px solid #e4e7ef;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff">
+          <div>
+            <div style="font-size:16px;font-weight:700">${a.name} 미수금 현황</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px">${a.floor} · ${a.status} · 기초 미수금 ${a.base.toLocaleString('ko-KR')}원</div>
+          </div>
+          <button onclick="closeArrearsModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280">✕</button>
+        </div>
+        <div style="padding:20px 24px">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="background:#f8f9fc">
+                <th style="padding:8px 12px;text-align:center;border-bottom:2px solid #e4e7ef;color:#6b7280;font-size:11px">지급월</th>
+                <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e4e7ef;color:#6b7280;font-size:11px">상환 예정금액</th>
+                <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e4e7ef;color:#6b7280;font-size:11px">상환 금액</th>
+                <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e4e7ef;color:#6b7280;font-size:11px">미수금 잔액</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+            <tfoot>
+              <tr style="background:#fef2f2">
+                <td colspan="2" style="padding:10px 12px;font-weight:700;color:#dc2626">현재 미수금 잔액</td>
+                <td colspan="2" style="padding:10px 12px;text-align:right;font-variant-numeric:tabular-nums;font-size:15px;font-weight:700;color:#dc2626">${balance.toLocaleString('ko-KR')}원</td>
+              </tr>
+              <tr style="background:#f8f9fc;border-top:2px solid #e4e7ef">
+                <td style="padding:8px 12px;font-weight:700">합계</td>
+                <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700">${totalExpected.toLocaleString('ko-KR')}</td>
+                <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:#059669">${totalPaid.toLocaleString('ko-KR')}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+
+function showDokhanModal() {
+  const a = ARREARS['dokhan'];
+  // 전기료: 전월(currentMonthIdx 기준 직전 달)까지만 누적
+  const dokhanElecData = ELEC_DATA.slice(0, currentMonthIdx);
+  const dokhanElec = dokhanElecData.reduce((sum, d) => {
+    const fl = d.floors.find(f => f.id === 'f3');
+    return sum + (fl ? fl.amount : 0);
+  }, 0);
+  const dokhanElecUntil = dokhanElecData.length > 0 ? dokhanElecData[dokhanElecData.length-1].label : '';
+  const items = [
+    { label: '임대료', amount: a.items.find(i => i.label === '임대료').amount },
+    { label: '관리비', amount: a.items.find(i => i.label === '관리비').amount },
+    { label: '전기료', amount: dokhanElec },
+  ];
+  const total = items.reduce((s, r) => s + r.amount, 0);
+  const rows = items.map(r => `
+    <tr>
+      <td style="padding:10px 16px;border-bottom:1px solid #e4e7ef;font-weight:500">${r.label}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid #e4e7ef;text-align:right;font-variant-numeric:tabular-nums;font-size:13px;font-weight:600">${r.amount.toLocaleString('ko-KR')}원</td>
+    </tr>`).join('');
+
+  document.getElementById('arrearsModal').innerHTML = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;display:flex;align-items:center;justify-content:center" onclick="if(event.target===this)closeArrearsModal()">
+      <div style="background:#fff;border-radius:12px;width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+        <div style="padding:20px 24px;border-bottom:1px solid #e4e7ef;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:16px;font-weight:700">${a.name} 미수금 현황</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px">${a.floor} · ${a.status}</div>
+          </div>
+          <button onclick="closeArrearsModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6b7280">✕</button>
+        </div>
+        <div style="padding:20px 24px">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="background:#f8f9fc">
+                <th style="padding:8px 16px;text-align:left;border-bottom:2px solid #e4e7ef;color:#6b7280;font-size:11px">구분</th>
+                <th style="padding:8px 16px;text-align:right;border-bottom:2px solid #e4e7ef;color:#6b7280;font-size:11px">미수금액</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+            <tfoot>
+              <tr style="background:#fef2f2">
+                <td style="padding:10px 16px;font-weight:700;color:#dc2626">합계</td>
+                <td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums;font-size:15px;font-weight:700;color:#dc2626">${total.toLocaleString('ko-KR')}원</td>
+              </tr>
+            </tfoot>
+          </table>
+          
+        </div>
+      </div>
+    </div>`;
+}
+
+function closeArrearsModal() {
+  document.getElementById('arrearsModal').innerHTML = '';
+}
+
+function renderInvoiceInfo() {
+  const cur = ELEC_DATA[currentMonthIdx];
+  if (!cur) return;
+  // 발급월 = 선택된 달의 다음 달
+  let iMonth = cur.month + 1, iYear = cur.year;
+  if (iMonth > 12) { iMonth = 1; iYear++; }
+  document.getElementById('invoiceInfo').innerHTML = 
+    `<strong style="color:var(--text)">${iYear}년 ${iMonth}월</strong> 발급내역<br>` +
+    `${iMonth}월 임대료·관리비 + <strong style="color:var(--text)">${cur.label}</strong> 전기사용료 자동 반영`;
+  document.getElementById('invoiceBtnLabel').textContent = `${iMonth}월 세금계산서 다운로드`;
+}
+
+// DSRK 분기납: 현재 월이 속한 분기의 첫 달에 직전 분기 청구분 발급
+function getDsrkInvoiceContext(year, month) {
+  const quarterIdx = Math.floor((month-1)/3); // 0,1,2,3
+  const issueMonth = 3 * quarterIdx + 1; // 1,4,7,10
+  let bStart, bEnd;
+  if (quarterIdx === 0) { bStart = 10; bEnd = 12; }
+  else { bStart = 3*(quarterIdx-1)+1; bEnd = 3*quarterIdx; }
+  return {
+    issueDate: `${year}.${String(issueMonth).padStart(2,'0')}.01`,
+    rentSummary: `${bStart}-${bEnd}월 임대료`,
+    maintSummary: `${bStart}-${bEnd}월 관리비`
+  };
+}
+
+async function generateInvoiceXlsx() {
+  if (typeof ExcelJS === 'undefined') {
+    alert('ExcelJS 라이브러리를 로드 중입니다. 잠시 후 다시 시도해주세요.');
+    return;
+  }
+  const cur = ELEC_DATA[currentMonthIdx]; // 선택된 달 = 전기료 데이터
+  if (!cur) { alert('월 데이터가 없습니다.'); return; }
+  // 발급월 = 다음 달 (예: 5월 선택 → 6월 양식)
+  let month = cur.month + 1, year = cur.year;
+  if (month > 12) { month = 1; year++; }
+
+  const wb = new ExcelJS.Workbook();
+  const sheetName = `${year}.${String(month).padStart(2,'0')}`;
+  const ws = wb.addWorksheet(sheetName);
+
+  // 컬럼 너비
+  ws.getColumn('A').width = 2;
+  ws.getColumn('B').width = 16.375;
+  ws.getColumn('C').width = 12;
+  ws.getColumn('D').width = 11;
+  ws.getColumn('E').width = 14;
+  ws.getColumn('F').width = 12;
+  ws.getColumn('G').width = 14;
+  ws.getColumn('H').width = 13;
+  ws.getColumn('I').width = 17;
+  ws.getColumn('J').width = 34.75;
+
+  // 영구 메모 (㈜독한 12월 렌트프리 안내)
+  const note = ws.getCell('E1');
+  note.value = '* 독한짐 매년 12월 렌트프리 (관리비는 납부)';
+  note.font = { name:'맑은 고딕', size:11, color:{argb:'FFFF0000'} };
+
+  // 제목
+  const title = ws.getCell('B2');
+  title.value = `${month}월 명진빌딩 세금계산서 발급내역`;
+  title.font = { name:'맑은 고딕', size:14, bold:true };
+  title.alignment = { vertical:'middle' };
+  ws.getRow(2).height = 21;
+
+  // 헤더 (B3:J3)
+  const headers = ['거래처명','거래처 코드','내용','공급가액','부가세','총액','발행일자','적요','이메일'];
+  const headerRow = 3;
+  ws.getRow(headerRow).height = 17.25;
+  headers.forEach((h, i) => {
+    const col = 2 + i; // B=2
+    const cell = ws.getCell(headerRow, col);
+    cell.value = h;
+    cell.font = { name:'맑은 고딕', size:11, bold:true };
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFFF00'} };
+    cell.alignment = { horizontal:'center', vertical:'middle' };
+    const isFirst = i === 0;
+    const isLast = i === headers.length - 1;
+    cell.border = {
+      top: { style:'medium' },
+      bottom: { style:'thin' },
+      left: { style: isFirst ? 'medium' : 'thin' },
+      right: { style: isLast ? 'medium' : 'thin' }
+    };
+  });
+
+  // 숫자 포맷
+  const numFmt = '_-* #,##0_-;\\-* #,##0_-;_-* "-"_-;_-@_-';
+
+  // 데이터 행 작성
+  let row = 4;
+  const totalTenants = INVOICE_MAPPING.length;
+  let tenantIdx = 0;
+
+  for (const m of INVOICE_MAPPING) {
+    const tenant = TENANTS.find(t => t.id === m.tenantId);
+    if (!tenant || tenant.status === '공실') { tenantIdx++; continue; }
+
+    // 항목 목록 구성
+    const items = [];
+    let issueDateOverride = null; // DSRK 분기납 일 때
+
+    if (m.cycle === 'quarterly' && m.tenantId === 'f7') {
+      // DSRK 분기납: 발급 달(1, 4, 7, 10월)에만 표시
+      if (![1, 4, 7, 10].includes(month)) { tenantIdx++; continue; }
+      const ctx = getDsrkInvoiceContext(year, month);
+      issueDateOverride = ctx.issueDate;
+      if (m.items.includes('rent')) {
+        items.push({ label:'임대료', supply: tenant.rent/1.1, summary: ctx.rentSummary });
+      }
+      if (m.items.includes('maint')) {
+        items.push({ label:'관리비', supply: tenant.maint/1.1, summary: ctx.maintSummary });
+      }
+    } else {
+      // 월별 발급
+      const defaultIssueDate = `${year}.${String(month).padStart(2,'0')}.01`;
+      const isRentFree = (m.rentFreeMonth === month);
+      if (m.items.includes('rent') && !isRentFree) {
+        items.push({ label:'임대료', supply: tenant.rent/1.1, summary:`${month}월 임대료` });
+      }
+      if (m.items.includes('maint')) {
+        items.push({ label:'관리비', supply: tenant.maint/1.1, summary:`${month}월 관리비` });
+      }
+      if (m.items.includes('elec')) {
+        // 선택된 달의 전기료 = 발급월(다음 달)의 전월 전기료
+        const pe = cur.floors.find(f => f.id === m.tenantId);
+        if (pe && pe.amount > 0) {
+          items.push({ label:'전기사용료', supply: pe.amount/1.1, summary:`${cur.month}월 전기 사용료` });
+        }
+      }
+      // 모든 행 발급일자는 현재 월 1일
+      issueDateOverride = defaultIssueDate;
+    }
+
+    if (items.length === 0) { tenantIdx++; continue; }
+
+    const isLastTenant = (tenantIdx === totalTenants - 1);
+    const startRow = row;
+    items.forEach((it, idx) => {
+      const isFirstItem = (idx === 0);
+      const isLastItem = (idx === items.length - 1);
+
+      ws.getRow(row).height = 25.5;
+
+      // B: 거래처명
+      const bCell = ws.getCell(`B${row}`);
+      if (isFirstItem) bCell.value = m.invoiceName;
+      bCell.font = { name:'맑은 고딕', size:11, bold:true };
+      bCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFFF00'} };
+      bCell.alignment = { horizontal:'center', vertical:'middle' };
+      bCell.numFmt = numFmt;
+      bCell.border = {
+        top: { style: isFirstItem ? 'medium' : 'thin' },
+        bottom: { style: isLastItem ? 'medium' : 'thin' },
+        left: { style:'medium' },
+        right: { style:'thin' }
+      };
+
+      // C: 거래처 코드
+      const cCell = ws.getCell(`C${row}`);
+      if (isFirstItem) cCell.value = m.code;
+      cCell.font = { name:'맑은 고딕', size:11, bold:true };
+      cCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFFF00'} };
+      cCell.alignment = { horizontal:'center', vertical:'middle' };
+      cCell.numFmt = '0_);[Red]\\(0\\)';
+      cCell.border = {
+        top: { style: isFirstItem ? 'medium' : 'thin' },
+        bottom: { style: isLastItem ? 'medium' : 'thin' },
+        left: { style:'thin' },
+        right: { style:'thin' }
+      };
+
+      // D: 내용
+      const dCell = ws.getCell(`D${row}`);
+      dCell.value = it.label;
+      dCell.font = { name:'맑은 고딕', size:11 };
+      dCell.alignment = { horizontal:'center', vertical:'middle' };
+      dCell.border = {
+        top: { style: isFirstItem ? 'medium' : 'thin' },
+        bottom: { style: isLastItem ? (isLastTenant ? 'medium' : 'thin') : 'thin' },
+        left: { style:'thin' },
+        right: { style:'thin' }
+      };
+
+      // E: 공급가액
+      const eCell = ws.getCell(`E${row}`);
+      eCell.value = Math.round(it.supply);
+      eCell.font = { name:'맑은 고딕', size:11 };
+      eCell.alignment = { vertical:'middle' };
+      eCell.numFmt = numFmt;
+      eCell.border = {
+        top: { style: isFirstItem ? 'medium' : 'thin' },
+        bottom: { style: isLastItem ? (isLastTenant ? 'medium' : 'thin') : 'thin' },
+        left: { style:'thin' },
+        right: { style:'thin' }
+      };
+
+      // F: 부가세 (수식)
+      const fCell = ws.getCell(`F${row}`);
+      fCell.value = { formula: `E${row}*0.1` };
+      fCell.font = { name:'맑은 고딕', size:11 };
+      fCell.alignment = { vertical:'middle' };
+      fCell.numFmt = numFmt;
+      fCell.border = {
+        top: { style: isFirstItem ? 'medium' : 'thin' },
+        bottom: { style: isLastItem ? (isLastTenant ? 'medium' : 'thin') : 'thin' },
+        left: { style:'thin' },
+        right: { style:'thin' }
+      };
+
+      // G: 총액 (수식)
+      const gCell = ws.getCell(`G${row}`);
+      gCell.value = { formula: `E${row}+F${row}` };
+      gCell.font = { name:'맑은 고딕', size:11 };
+      gCell.alignment = { vertical:'middle' };
+      gCell.numFmt = numFmt;
+      gCell.border = {
+        top: { style: isFirstItem ? 'medium' : 'thin' },
+        bottom: { style: isLastItem ? (isLastTenant ? 'medium' : 'thin') : 'thin' },
+        left: { style:'thin' },
+        right: { style:'thin' }
+      };
+
+      // H: 발행일자
+      const hCell = ws.getCell(`H${row}`);
+      hCell.value = issueDateOverride;
+      hCell.font = { name:'맑은 고딕', size:11 };
+      hCell.alignment = { horizontal:'center', vertical:'middle' };
+      hCell.numFmt = '@';
+      hCell.border = {
+        top: { style: isFirstItem ? 'medium' : 'thin' },
+        bottom: { style: isLastItem ? (isLastTenant ? 'medium' : 'thin') : 'thin' },
+        left: { style:'thin' },
+        right: { style:'thin' }
+      };
+
+      // I: 적요
+      const iCell = ws.getCell(`I${row}`);
+      iCell.value = it.summary;
+      iCell.font = { name:'맑은 고딕', size:10 };
+      iCell.alignment = { vertical:'middle' };
+      iCell.border = {
+        top: { style: isFirstItem ? 'medium' : 'thin' },
+        bottom: { style: isLastItem ? (isLastTenant ? 'medium' : 'thin') : 'thin' },
+        left: { style:'thin' },
+        right: { style:'thin' }
+      };
+
+      // J: 이메일
+      const jCell = ws.getCell(`J${row}`);
+      if (isFirstItem) jCell.value = m.email;
+      jCell.font = { name:'맑은 고딕', size:11 };
+      jCell.alignment = { horizontal:'center', vertical:'middle' };
+      jCell.border = {
+        top: { style: isFirstItem ? 'medium' : 'thin' },
+        bottom: { style: isLastItem ? 'medium' : 'thin' },
+        left: { style:'thin' },
+        right: { style:'medium' }
+      };
+
+      row++;
+    });
+
+    // 병합 (항목 2개 이상일 때만)
+    if (items.length > 1) {
+      ws.mergeCells(`B${startRow}:B${row-1}`);
+      ws.mergeCells(`C${startRow}:C${row-1}`);
+      ws.mergeCells(`J${startRow}:J${row-1}`);
+    }
+
+    tenantIdx++;
+  }
+
+  // 파일 다운로드
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `명진빌딩_세금계산서_발급_${month}월.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function renderAll(){renderMonthNav();renderKPI();renderTenantTable();renderElecTable();renderCharts();renderNoticeGrid();renderArrears();renderInvoiceInfo();}
+
+// 시작
+loadData();
 </script>
+<div id="arrearsModal"></div>
 </body>
 </html>
